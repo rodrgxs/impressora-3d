@@ -25,14 +25,14 @@ No Windows PowerShell, substitua `cp` por:
 Copy-Item .env.example .env.local
 ```
 
-Configure `DATABASE_URL` em `.env.local` com a URL privada de um PostgreSQL. A URL de exemplo não contém credenciais válidas. Gere o cliente Prisma e aplique as migrations no banco de desenvolvimento:
+Configure `DATABASE_URL` com a URL privada de um PostgreSQL. A URL de exemplo não contém credenciais válidas. Para desenvolvimento, configure a variável no ambiente e aplique as migrations:
 
 ```bash
 npm run db:generate
 npm run db:migrate
 ```
 
-`npm run db:deploy` aplica migrations existentes em ambientes de implantação; `npm run db:studio` abre o Prisma Studio. A aplicação atualmente não consulta o banco: o cliente em `src/lib/db/prisma.ts` e os modelos são a base para as próximas etapas. Não use prefixo `NEXT_PUBLIC_` em variáveis de conexão ou segredos.
+`npm run db:deploy` aplica migrations existentes em ambientes de implantação; `npm run db:studio` abre o Prisma Studio. A API de orçamento usa Prisma para registrar solicitações no PostgreSQL. Não use prefixo `NEXT_PUBLIC_` em variáveis de conexão ou segredos.
 
 Abra `http://localhost:3000`. Para gerar a compilação de produção:
 
@@ -43,9 +43,11 @@ npm start
 
 **Nota:** os pacotes não estão incluídos no arquivo ZIP. É necessário acesso à internet para `npm install`. Fixe as versões efetivamente instaladas no `package-lock.json` antes de publicar.
 
-## Como funciona o formulário nesta primeira versão
+## Como funciona o formulário
 
-O formulário valida os campos no navegador e **gera uma mensagem para o próprio usuário copiar ou enviar manualmente**. Ele não envia solicitações automaticamente, não armazena dados e não aceita arquivos ainda. Isso evita aparentar possuir infraestrutura operacional que ainda não foi configurada.
+O formulário envia os dados para `POST /api/quotes`, que valida e normaliza o payload no servidor e registra a solicitação com status `RECEIVED`. O envio não exige conta e não aceita arquivos nesta etapa. Após a confirmação do banco, a página mostra o identificador da solicitação e oferece copiar ou compartilhar os detalhes por WhatsApp.
+
+O endpoint aplica um limite local de cinco tentativas por IP a cada 15 minutos. Esse controle fica em memória no processo da aplicação: não é compartilhado entre instâncias ou reinicializações. Antes de operar em produção escalada/serverless, substitua-o por rate limit distribuído e configure a infraestrutura para fornecer um IP de cliente confiável.
 
 Edite `.env.local` e informe seu **número comercial verdadeiro** no formato `55` + DDD + número, sem espaços ou `+`:
 
@@ -66,6 +68,8 @@ src/
     layout.tsx           # Idioma, metadados e viewport
     page.tsx             # Página comercial
     robots.ts            # Bloqueio de indexação deste protótipo
+    api/
+      quotes/route.ts    # Criação validada e limitada de solicitações de orçamento
   components/
     header.tsx           # Menu responsivo
     catalog.tsx          # Filtros e cartões demonstrativos
@@ -73,6 +77,8 @@ src/
     quote-form.tsx       # Geração local da mensagem de orçamento
   lib/
     data.ts              # Exemplos de aplicações
+    quotes/
+      validation.ts      # Validação e normalização do payload público
     db/
       prisma.ts          # Cliente Prisma compartilhado por ambiente
 prisma/
@@ -84,7 +90,7 @@ prisma/
 
 1. Definir marca, contatos, empresa responsável, materiais e tipos de fabricação efetivamente atendidos.
 2. Substituir exemplos conceituais por fotografias e informações verificadas de peças reais, quando existirem.
-3. Criar API de orçamentos e persistência segura em PostgreSQL; implementar upload controlado de arquivos técnicos. A fundação do banco e a migration inicial já estão preparadas, mas ainda não são usadas pela landing page.
+3. Implementar upload controlado de arquivos técnicos e definir retenção/atendimento das solicitações registradas.
 4. Implementar área do cliente, autenticação, painel administrativo e pagamentos com fluxo de confirmação no servidor.
 5. Disponibilizar política de privacidade, condições comerciais e canais de atendimento aplicáveis.
 6. Configurar domínio, HTTPS e URL em `NEXT_PUBLIC_SITE_URL`. **Somente então** rever o `robots.ts` e `metadata.robots` no `layout.tsx`, que atualmente desabilitam indexação.
