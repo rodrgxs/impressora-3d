@@ -5,6 +5,7 @@
 ## Stack
 
 - Next.js (App Router), React e TypeScript
+- PostgreSQL com Prisma ORM; os modelos e migrations ficam em `prisma/`
 - Tailwind CSS configurado; identidade visual implementada em `src/app/globals.css` para facilitar ajustes
 - Ícones Lucide React; artes vetoriais originais em CSS/SVG, sem imagens de produtos fictícias
 
@@ -23,6 +24,15 @@ No Windows PowerShell, substitua `cp` por:
 ```powershell
 Copy-Item .env.example .env.local
 ```
+
+Configure `DATABASE_URL` em `.env.local` com a URL privada de um PostgreSQL. A URL de exemplo não contém credenciais válidas. Gere o cliente Prisma e aplique as migrations no banco de desenvolvimento:
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+`npm run db:deploy` aplica migrations existentes em ambientes de implantação; `npm run db:studio` abre o Prisma Studio. A aplicação atualmente não consulta o banco: o cliente em `src/lib/db/prisma.ts` e os modelos são a base para as próximas etapas. Não use prefixo `NEXT_PUBLIC_` em variáveis de conexão ou segredos.
 
 Abra `http://localhost:3000`. Para gerar a compilação de produção:
 
@@ -63,18 +73,19 @@ src/
     quote-form.tsx       # Geração local da mensagem de orçamento
   lib/
     data.ts              # Exemplos de aplicações
+    db/
+      prisma.ts          # Cliente Prisma compartilhado por ambiente
+prisma/
+  schema.prisma          # Modelos, enums e relacionamentos
+  migrations/            # Histórico versionado de alterações no banco
 ```
 
 ## Antes da publicação comercial
 
 1. Definir marca, contatos, empresa responsável, materiais e tipos de fabricação efetivamente atendidos.
 2. Substituir exemplos conceituais por fotografias e informações verificadas de peças reais, quando existirem.
-3. Criar API de orçamentos e persistência segura em PostgreSQL; implementar upload controlado de arquivos técnicos.
+3. Criar API de orçamentos e persistência segura em PostgreSQL; implementar upload controlado de arquivos técnicos. A fundação do banco e a migration inicial já estão preparadas, mas ainda não são usadas pela landing page.
 4. Implementar área do cliente, autenticação, painel administrativo e pagamentos com fluxo de confirmação no servidor.
 5. Disponibilizar política de privacidade, condições comerciais e canais de atendimento aplicáveis.
 6. Configurar domínio, HTTPS e URL em `NEXT_PUBLIC_SITE_URL`. **Somente então** rever o `robots.ts` e `metadata.robots` no `layout.tsx`, que atualmente desabilitam indexação.
 7. Executar testes de compilação, acessibilidade, integração, segurança e navegação antes de colocar pedidos reais no ar.
-
-## Limitações de validação nesta entrega
-
-O projeto foi gerado em ambiente sem acesso ao registro npm. Portanto, **não foi possível instalar dependências ou executar `npm run build` neste ambiente**; rode os comandos acima localmente para completar a verificação e envie erros caso apareçam.
