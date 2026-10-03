@@ -305,7 +305,7 @@ model Payment {
 
   @@index([orderId, createdAt])
   @@index([status, createdAt])
-  @@index([provider, providerReference])
+  @@unique([provider, providerReference])
 }
 
 model StatusHistory {
