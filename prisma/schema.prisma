@@ -59,6 +59,7 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
+  passwordHash  String?   @db.Text
   emailVerified DateTime?
   image         String?
   phone         String?   @db.VarChar(24)
@@ -327,4 +328,13 @@ model StatusHistory {
   @@index([quoteRequestId, createdAt])
   @@index([orderId, createdAt])
   @@index([actorUserId])
+}
+
+// Shared fixed-window counters. Keys contain HMAC digests, never raw e-mails/IPs.
+model AuthRateLimit {
+  key       String   @id @db.VarChar(80)
+  count     Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
