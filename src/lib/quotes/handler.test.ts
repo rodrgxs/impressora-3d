@@ -161,6 +161,9 @@ test("trusted client header accepts only one canonical IP", () => {
       clientKey(new Headers({ "x-real-ip": "arbitrary-bucket" })),
       "unknown",
     );
+    for (const scoped of ["fe80::1%eth0", "fe80::1%1"]) {
+      assert.equal(clientKey(new Headers({ "x-real-ip": scoped })), "unknown");
+    }
     assert.equal(
       clientKey(new Headers({ "x-real-ip": "2001:0db8::1" })),
       clientKey(new Headers({ "x-real-ip": "2001:db8::1" })),

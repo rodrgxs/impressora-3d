@@ -5,7 +5,9 @@ export function clientKey(headers: Headers) {
   const trustedHeader = process.env.AUTH_CLIENT_IP_HEADER;
   const value = trustedHeader ? headers.get(trustedHeader)?.trim() : undefined;
   // Accept one IP only, never an untrusted forwarding chain or arbitrary bucket key.
-  if (!value || !isIP(value)) return "unknown";
+  // Scoped IPv6 (for example fe80::1%eth0) is local to an interface, not a
+  // globally meaningful client identity, and cannot be parsed by URL.
+  if (!value || value.includes("%") || !isIP(value)) return "unknown";
   return isIP(value) === 6 ? new URL(`http://[${value}]/`).hostname : value;
 }
 
