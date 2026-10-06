@@ -1,29 +1,321 @@
-import { ArrowDown, ArrowRight, ArrowUpRight, Check, ClipboardList, Compass, Crosshair, MessageSquareText, MoveUpRight, Wrench } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  ClipboardList,
+  Compass,
+  Crosshair,
+  MessageSquareText,
+  MoveUpRight,
+  Wrench,
+} from "lucide-react";
 import { Header } from "@/components/header";
 import { Catalog } from "@/components/catalog";
 import { QuoteForm } from "@/components/quote-form";
 
 export default function Home() {
-  return <>
-    <Header/>
-    <main id="inicio">
-      <section className="hero"><div className="container hero-grid">
-        <div className="hero-content">
-          <div className="hero-kicker"><span className="status-dot"/> PEÇAS SOB ENCOMENDA <span className="kicker-sep">/</span> PROJETOS ESPECIAIS</div>
-          <h1>O detalhe que falta.<br/><span className="accent">A peça que faz</span><br/>a diferença<span className="accent">.</span></h1>
-          <p className="hero-lead">Peças difíceis de encontrar, componentes personalizados e ideias que precisam sair do papel. Conte o que você procura e descubra se podemos desenvolver uma solução para o seu projeto.</p>
-          <div className="hero-actions"><a href="#orcamento" className="button button-primary">Solicitar uma peça <ArrowUpRight size={19}/></a><a href="#catalogo" className="button button-ghost">Explorar aplicações <ArrowDown size={18}/></a></div>
-          <div className="hero-foot"><span>01 / 03</span><div className="foot-line"><span/></div><span>DO CLÁSSICO AO CUSTOM</span></div>
+  return (
+    <>
+      <Header />
+      <main id="conteudo" tabIndex={-1}>
+        <div id="inicio" />
+        <section className="hero">
+          <div className="container hero-grid">
+            <div className="hero-content">
+              <div className="hero-kicker">
+                <span className="status-dot" /> PEÇAS SOB ENCOMENDA{" "}
+                <span className="kicker-sep">/</span> PROJETOS ESPECIAIS
+              </div>
+              <h1>
+                Falta uma peça?
+                <br />
+                <span className="accent">Vamos avaliar</span>
+                <br />
+                como fabricar.
+              </h1>
+              <p className="hero-lead">
+                Peças difíceis de encontrar, componentes personalizados e ideias
+                que precisam sair do papel. Conte o que você procura e descubra
+                se podemos desenvolver uma solução para o seu projeto.
+              </p>
+              <div className="hero-actions">
+                <a href="#orcamento" className="button button-primary">
+                  Solicitar uma peça <ArrowUpRight size={19} />
+                </a>
+                <a href="#catalogo" className="button button-ghost">
+                  Explorar aplicações <ArrowDown size={18} />
+                </a>
+              </div>
+              <div className="hero-foot">
+                <span>SOB ENCOMENDA</span>
+                <div className="foot-line">
+                  <span />
+                </div>
+                <span>DO CLÁSSICO AO CUSTOM</span>
+              </div>
+            </div>
+            <div className="hero-art" aria-hidden="true">
+              <div className="hero-art-grid" />
+              <div className="hero-art-ring ring-back" />
+              <div className="hero-art-ring ring-front" />
+              <div className="ring-hub">
+                <div />
+                <div />
+                <div />
+                <div />
+                <div />
+              </div>
+              <div className="art-target target-one">+</div>
+              <div className="art-target target-two">+</div>
+              <div className="art-annotation annotation-one">
+                <span>FIG. 01</span>
+                <b>COMPONENTE / CONCEITO</b>
+              </div>
+              <div className="art-annotation annotation-two">
+                PROJETO EM CONSTRUÇÃO <span>↗</span>
+              </div>
+              <div className="art-vertical">
+                PRECISÃO // PERSONALIZAÇÃO // POSSIBILIDADES
+              </div>
+            </div>
+          </div>
+          <div className="container">
+            <div className="hero-bottom">
+              <span>
+                <i className="tiny-star">✳</i> IDEIAS REAIS. POSSIBILIDADES SOB
+                MEDIDA.
+              </span>
+              <a href="#solucoes">
+                DESCUBRA O PROJETO <ArrowDown size={15} />
+              </a>
+            </div>
+          </div>
+        </section>
+        <section className="features-strip" id="solucoes">
+          <div className="container feature-grid">
+            <div>
+              <Crosshair size={23} />
+              <span>
+                <strong>Peças difíceis de encontrar</strong>
+                <small>Explore alternativas para seu projeto</small>
+              </span>
+            </div>
+            <div>
+              <Wrench size={23} />
+              <span>
+                <strong>Projetos personalizados</strong>
+                <small>Necessidades diferentes, soluções próprias</small>
+              </span>
+            </div>
+            <div>
+              <MessageSquareText size={23} />
+              <span>
+                <strong>Atendimento por orçamento</strong>
+                <small>Conte os detalhes antes de decidir</small>
+              </span>
+            </div>
+          </div>
+        </section>
+        <section className="section catalog-section" id="catalogo">
+          <div className="container">
+            <div className="section-topline">
+              <span className="eyebrow">
+                <span className="eyebrow-line" /> POSSIBILIDADES
+              </span>
+              <span className="section-numeric">01 — 04</span>
+            </div>
+            <div className="section-heading">
+              <div>
+                <h2>
+                  Seu projeto não precisa
+                  <br />
+                  <span>parar por uma peça.</span>
+                </h2>
+                <p>
+                  Alguns exemplos do tipo de demanda que você pode apresentar.
+                  Cada solicitação depende de avaliação técnica e comercial.
+                </p>
+              </div>
+              <span className="outline-tag">CATÁLOGO CONCEITUAL ↗</span>
+            </div>
+            <div className="prototype-disclaimer">
+              <span>!</span> As peças abaixo são exemplos ilustrativos de
+              aplicações, não produtos em estoque ou ofertas de venda.
+            </div>
+            <Catalog />
+          </div>
+        </section>
+        <section className="statement" id="sobre">
+          <div className="container statement-layout">
+            <div>
+              <span className="eyebrow">
+                <span className="eyebrow-line" /> O NOSSO PONTO DE PARTIDA
+              </span>
+              <h2>
+                Nem toda peça existe
+                <br />
+                em uma prateleira<span className="accent">.</span>
+              </h2>
+            </div>
+            <div>
+              <p>
+                Restauração de clássicos, adaptações e projetos pessoais pedem
+                atenção ao detalhe. Esta plataforma nasce para organizar essas
+                demandas e aproximar você de uma avaliação de fabricação sob
+                encomenda.
+              </p>
+              <a href="#orcamento" className="underlined-link">
+                Descreva o que você precisa <ArrowUpRight size={17} />
+              </a>
+            </div>
+          </div>
+        </section>
+        <section className="section process-section" id="processo">
+          <div className="container">
+            <div className="section-topline">
+              <span className="eyebrow">
+                <span className="eyebrow-line" /> PROCESSO
+              </span>
+              <span className="section-numeric">02 — 04</span>
+            </div>
+            <div className="section-heading">
+              <div>
+                <h2>
+                  Da necessidade
+                  <br />
+                  <span>ao próximo passo.</span>
+                </h2>
+                <p>
+                  Uma maneira simples de dar início à sua solicitação, sem
+                  compromisso de fabricação antes da avaliação.
+                </p>
+              </div>
+            </div>
+            <div className="process-grid">
+              <article>
+                <span className="process-number">
+                  01 <Compass size={20} />
+                </span>
+                <div className="process-rule" />
+                <h3>Conte a ideia</h3>
+                <p>
+                  Descreva a peça, o veículo ou a aplicação. Medidas e
+                  referências ajudam na análise.
+                </p>
+              </article>
+              <article>
+                <span className="process-number">
+                  02 <ClipboardList size={20} />
+                </span>
+                <div className="process-rule" />
+                <h3>Solicite avaliação</h3>
+                <p>
+                  Compartilhe sua demanda. O atendimento poderá pedir
+                  informações complementares.
+                </p>
+              </article>
+              <article>
+                <span className="process-number">
+                  03 <Check size={20} />
+                </span>
+                <div className="process-rule" />
+                <h3>Analise a proposta</h3>
+                <p>
+                  Se a fabricação for viável, confirme especificações, preço e
+                  prazo antes de fechar o pedido.
+                </p>
+              </article>
+              <article>
+                <span className="process-number">
+                  04 <Check size={20} />
+                </span>
+                <div className="process-rule" />
+                <h3>Aprove os detalhes</h3>
+                <p>
+                  Confirme o escopo e as condições combinadas antes de autorizar
+                  a produção.
+                </p>
+              </article>
+              <article>
+                <span className="process-number">
+                  05 <Wrench size={20} />
+                </span>
+                <div className="process-rule" />
+                <h3>Fabricação</h3>
+                <p>
+                  Quando aprovada e contratada, a peça segue as especificações e
+                  o prazo acordados.
+                </p>
+              </article>
+              <article>
+                <span className="process-number">
+                  06 <MoveUpRight size={20} />
+                </span>
+                <div className="process-rule" />
+                <h3>Entrega combinada</h3>
+                <p>
+                  Forma de envio, frete e orientações de uso são definidos
+                  durante o atendimento.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+        <section className="section contact-section" id="contato">
+          <div className="container">
+            <div className="section-topline">
+              <span className="eyebrow">
+                <span className="eyebrow-line" /> CONTATO
+              </span>
+              <span className="section-numeric">03 — 04</span>
+            </div>
+            <QuoteForm />
+          </div>
+        </section>
+        <section className="bottom-cta">
+          <div className="container bottom-cta-inner">
+            <div>
+              <span>UM PROJETO COMEÇA COM UMA CONVERSA.</span>
+              <h2>
+                Vamos descobrir
+                <br />o que é possível<span className="accent">?</span>
+              </h2>
+            </div>
+            <a className="button button-primary" href="#orcamento">
+              Preparar um orçamento <MoveUpRight size={19} />
+            </a>
+          </div>
+        </section>
+      </main>
+      <footer className="footer">
+        <div className="container">
+          <div className="footer-main">
+            <a href="#inicio" className="brand footer-brand">
+              <span className="brand-mark">
+                P<span>·</span>
+              </span>
+              <span>
+                PEÇA<span className="brand-dot">.</span>LAB
+                <small>MARCA PROVISÓRIA / PROJETO EM DESENVOLVIMENTO</small>
+              </span>
+            </a>
+            <p>
+              Uma ideia para conectar projetos especiais a peças feitas sob
+              encomenda. Conte o seu próximo desafio.
+            </p>
+            <a href="#inicio" className="back-to-top">
+              Voltar ao início <ArrowRight size={15} />
+            </a>
+          </div>
+          <div className="footer-bottom">
+            <span>
+              © {new Date().getFullYear()} PEÇA.LAB — PROTÓTIPO NÃO COMERCIAL
+            </span>
+            <span>SEM COMPRAS NESTA VERSÃO</span>
+          </div>
         </div>
-        <div className="hero-art" aria-hidden="true"><div className="hero-art-grid"/><div className="hero-art-ring ring-back"/><div className="hero-art-ring ring-front"/><div className="ring-hub"><div/><div/><div/><div/><div/></div><div className="art-target target-one">+</div><div className="art-target target-two">+</div><div className="art-annotation annotation-one"><span>FIG. 01</span><b>COMPONENTE / CONCEITO</b></div><div className="art-annotation annotation-two">PROJETO EM CONSTRUÇÃO <span>↗</span></div><div className="art-vertical">PRECISÃO // PERSONALIZAÇÃO // POSSIBILIDADES</div></div>
-      </div><div className="container"><div className="hero-bottom"><span><i className="tiny-star">✳</i> IDEIAS REAIS. POSSIBILIDADES SOB MEDIDA.</span><a href="#solucoes">DESCUBRA O PROJETO <ArrowDown size={15}/></a></div></div></section>
-      <section className="features-strip" id="solucoes"><div className="container feature-grid"><div><Crosshair size={23}/><span><strong>Peças difíceis de encontrar</strong><small>Explore alternativas para seu projeto</small></span></div><div><Wrench size={23}/><span><strong>Projetos personalizados</strong><small>Necessidades diferentes, soluções próprias</small></span></div><div><MessageSquareText size={23}/><span><strong>Atendimento por orçamento</strong><small>Conte os detalhes antes de decidir</small></span></div></div></section>
-      <section className="section catalog-section" id="catalogo"><div className="container"><div className="section-topline"><span className="eyebrow"><span className="eyebrow-line"/> POSSIBILIDADES</span><span className="section-numeric">01 — 04</span></div><div className="section-heading"><div><h2>Seu projeto não precisa<br/><span>parar por uma peça.</span></h2><p>Alguns exemplos do tipo de demanda que você pode apresentar. Cada solicitação depende de avaliação técnica e comercial.</p></div><span className="outline-tag">CATÁLOGO CONCEITUAL ↗</span></div><div className="prototype-disclaimer"><span>!</span> As peças abaixo são exemplos ilustrativos de aplicações, não produtos em estoque ou ofertas de venda.</div><Catalog/></div></section>
-      <section className="statement" id="sobre"><div className="container statement-layout"><div><span className="eyebrow"><span className="eyebrow-line"/> O NOSSO PONTO DE PARTIDA</span><h2>Nem toda peça existe<br/>em uma prateleira<span className="accent">.</span></h2></div><div><p>Restauração de clássicos, adaptações e projetos pessoais pedem atenção ao detalhe. Esta plataforma nasce para organizar essas demandas e aproximar você de uma avaliação de fabricação sob encomenda.</p><a href="#orcamento" className="underlined-link">Descreva o que você precisa <ArrowUpRight size={17}/></a></div></div></section>
-      <section className="section process-section" id="processo"><div className="container"><div className="section-topline"><span className="eyebrow"><span className="eyebrow-line"/> PROCESSO</span><span className="section-numeric">02 — 04</span></div><div className="section-heading"><div><h2>Da necessidade<br/><span>ao próximo passo.</span></h2><p>Uma maneira simples de dar início à sua solicitação, sem compromisso de fabricação antes da avaliação.</p></div></div><div className="process-grid"><article><span className="process-number">01 <Compass size={20}/></span><div className="process-rule"/><h3>Conte a ideia</h3><p>Descreva a peça, o veículo ou a aplicação. Medidas e referências ajudam na análise.</p></article><article><span className="process-number">02 <ClipboardList size={20}/></span><div className="process-rule"/><h3>Solicite avaliação</h3><p>Compartilhe sua demanda. O atendimento poderá pedir informações complementares.</p></article><article><span className="process-number">03 <Check size={20}/></span><div className="process-rule"/><h3>Analise a proposta</h3><p>Se a fabricação for viável, confirme especificações, preço e prazo antes de fechar o pedido.</p></article></div></div></section>
-      <section className="section contact-section" id="contato"><div className="container"><div className="section-topline"><span className="eyebrow"><span className="eyebrow-line"/> CONTATO</span><span className="section-numeric">03 — 04</span></div><QuoteForm/></div></section>
-      <section className="bottom-cta"><div className="container bottom-cta-inner"><div><span>UM PROJETO COMEÇA COM UMA CONVERSA.</span><h2>Vamos descobrir<br/>o que é possível<span className="accent">?</span></h2></div><a className="button button-primary" href="#orcamento">Preparar um orçamento <MoveUpRight size={19}/></a></div></section>
-    </main>
-    <footer className="footer"><div className="container"><div className="footer-main"><a href="#inicio" className="brand footer-brand"><span className="brand-mark">P<span>·</span></span><span>PEÇA<span className="brand-dot">.</span>LAB<small>MARCA PROVISÓRIA / PROJETO EM DESENVOLVIMENTO</small></span></a><p>Uma ideia para conectar projetos especiais a peças feitas sob encomenda. Conte o seu próximo desafio.</p><a href="#inicio" className="back-to-top">Voltar ao início <ArrowRight size={15}/></a></div><div className="footer-bottom"><span>© {new Date().getFullYear()} PEÇA.LAB — PROTÓTIPO NÃO COMERCIAL</span><span>SEM COMPRAS NESTA VERSÃO</span></div></div></footer>
-  </>;
+      </footer>
+    </>
+  );
 }
