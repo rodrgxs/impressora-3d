@@ -7,22 +7,30 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test src/lib/quotes/validation.test.ts",
+    "test": "node --import tsx --test src/lib/**/*.test.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "typecheck": "tsc --noEmit",
+    "audit:check": "node scripts/audit-check.mjs",
+    "test:integration": "node --import tsx --test tests/database.integration.ts",
+    "check:deployment": "node scripts/check-deployment.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@prisma/client": "6.19.0",
+    "@prisma/client": "6.19.3",
     "lucide-react": "^0.468.0",
     "next": "^15.5.0",
+    "next-auth": "5.0.0-beta.32",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@eslint/eslintrc": "3.3.7",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -30,14 +38,23 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.5.0",
     "postcss": "^8.4.0",
-    "prisma": "6.19.0",
+    "prisma": "6.19.3",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.23.15",
     "typescript": "^5.7.0"
   },
   "allowScripts": {
-    "@prisma/client@6.19.0": true,
-    "@prisma/engines@6.19.0": true,
-    "prisma@6.19.0": true
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "prisma@6.19.3": true
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.28"
+    },
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.2"
+    },
+    "postcss-selector-parser": "7.1.6"
   }
 }

@@ -1,6 +1,6 @@
 # PEÇA.LAB — Landing page de peças sob encomenda (v1)
 
-**Marca, textos de produtos e ilustrações demonstrativos.** Este protótipo não anuncia produtos reais e não recebe pagamentos. A plataforma comercial (cadastro, banco de dados, área administrativa, pagamentos e upload de arquivos) será implementada nas próximas etapas.
+**Marca, textos de produtos e ilustrações demonstrativos.** Este protótipo não anuncia produtos reais e não recebe pagamentos. Cadastro, login e orçamentos persistidos já estão implementados. Área administrativa, pagamentos e upload de arquivos ficam para as próximas etapas.
 
 ## Stack
 
@@ -47,7 +47,11 @@ npm start
 
 O formulário envia os dados para `POST /api/quotes`, que valida e normaliza o payload no servidor e registra a solicitação com status `RECEIVED`. O envio não exige conta e não aceita arquivos nesta etapa. Após a confirmação do banco, a página mostra o identificador da solicitação e oferece copiar ou compartilhar os detalhes por WhatsApp.
 
-O endpoint aplica um limite local de cinco tentativas por IP a cada 15 minutos. Esse controle fica em memória no processo da aplicação: não é compartilhado entre instâncias ou reinicializações. Antes de operar em produção escalada/serverless, substitua-o por rate limit distribuído e configure a infraestrutura para fornecer um IP de cliente confiável.
+O endpoint exige Origin da aplicação, valida até 16 KiB durante a leitura e usa limite compartilhado no PostgreSQL: cinco tentativas por IP a cada 15 minutos. Login, cadastro e orçamento usam `AUTH_CLIENT_IP_HEADER` somente quando configurado para um cabeçalho com um único IP que o proxy sobrescreve. Sem configuração, o limite é global conservador. A infraestrutura deve impedir acesso direto à origem. Falha no contador bloqueia o envio com 503.
+
+O formulário envia `Idempotency-Key` (UUID v4), mantida ao tentar novamente sem editar os dados. O banco impede criar duas solicitações para a mesma chave e o servidor confere conteúdo e identidade. Uma chave repetida com conteúdo/usuário diferentes retorna 409. Integrações sem chave continuam aceitas, mas não recebem essa garantia de deduplicação. Origin correto é obrigatório para integrações diretas também; ele não é autenticação para scripts externos.
+
+Esta branch requer as migrations de autenticação e de idempotência, além de `AUTH_SECRET`, inclusive para orçamentos de visitantes. Aplique somente no ambiente autorizado.
 
 Edite `.env.local` e informe seu **número comercial verdadeiro** no formato `55` + DDD + número, sem espaços ou `+`:
 
@@ -74,7 +78,7 @@ src/
     header.tsx           # Menu responsivo
     catalog.tsx          # Filtros e cartões demonstrativos
     part-art.tsx         # Ilustrações vetoriais autorais
-    quote-form.tsx       # Geração local da mensagem de orçamento
+    quote-form.tsx       # Envio e confirmação de orçamento persistido
   lib/
     data.ts              # Exemplos de aplicações
     quotes/
@@ -91,7 +95,76 @@ prisma/
 1. Definir marca, contatos, empresa responsável, materiais e tipos de fabricação efetivamente atendidos.
 2. Substituir exemplos conceituais por fotografias e informações verificadas de peças reais, quando existirem.
 3. Implementar upload controlado de arquivos técnicos e definir retenção/atendimento das solicitações registradas.
-4. Implementar área do cliente, autenticação, painel administrativo e pagamentos com fluxo de confirmação no servidor.
+4. Implementar painel administrativo e pagamentos com fluxo de confirmação no servidor.
 5. Disponibilizar política de privacidade, condições comerciais e canais de atendimento aplicáveis.
 6. Configurar domínio, HTTPS e URL em `NEXT_PUBLIC_SITE_URL`. **Somente então** rever o `robots.ts` e `metadata.robots` no `layout.tsx`, que atualmente desabilitam indexação.
 7. Executar testes de compilação, acessibilidade, integração, segurança e navegação antes de colocar pedidos reais no ar.
+
+## Autenticação de clientes
+
+- `/cadastro`: nome, e-mail e senha; todo cadastro público recebe `CUSTOMER`.
+- `/login`: e-mail e senha com Auth.js (`next-auth` **5.0.0-beta.32**, versão fixada compatível com Next.js 15/React 19). O provedor Credentials utiliza sessão JWT; os modelos Account/Session existentes são preservados para futuras integrações.
+- `/conta`: protegida no servidor; lista as últimas 50 solicitações do próprio cliente e permite logout. O perfil `ADMIN` está preparado no schema e nos controles de autorização, sem painel administrativo.
+- Senhas de 12–128 caracteres, sem corte ou trim, usam scrypt (`N=131072`, `r=8`, `p=1`), salt aleatório de 16 bytes e chave de 64 bytes. Login inexistente/sem senha executa a mesma derivação.
+- A sessão JWT é criptografada pelo Auth.js, com cookies HttpOnly/SameSite=Lax e Secure em HTTPS, duração de 8 horas, renovada quando o endpoint de sessão é consultado e CSRF gerenciado pela biblioteca. Identidade e role são consultadas novamente no banco; alterações enviadas pelo navegador não promovem permissões. Logout remove os cookies desta sessão.
+- `POST /api/auth/register` exige Origin da aplicação e JSON até 4 KiB. Cadastro novo e e-mail duplicado devolvem a mesma resposta genérica, inclusive em cadastros concorrentes. Login retorna erro genérico para usuário inexistente, senha inválida e limite excedido.
+- Limites compartilhados no PostgreSQL: cadastro 5 tentativas/IP e 5/e-mail por 15 minutos; login 20/IP e 10/e-mail por 15 minutos, incluindo tentativas bem-sucedidas. UPSERT atômico evita concorrência; identificadores são HMAC, sem e-mail/IP em texto. Registros expirados há mais de um dia são removidos durante o uso. Falha no armazenamento bloqueia autenticação/cadastro.
+- `AUTH_CLIENT_IP_HEADER` deve ficar vazio até existir um proxy que sobrescreva esse header e impeça acesso direto à origem. Vazio aplica um limite global conservador por operação. Configure-o corretamente antes de atender múltiplos clientes em produção.
+- Orçamentos autenticados recebem `userId` exclusivamente da identidade confirmada no servidor; visitantes mantêm `null`. Payload com `userId` é rejeitado. Solicitações anônimas anteriores não são vinculadas por e-mail automaticamente. Falha na consulta da sessão impede salvar um pedido incorretamente como visitante.
+- Consultas de conta usam `where: { userId }` e selects explícitos; nenhuma resposta de cadastro, login, sessão ou conta inclui `passwordHash`. Erros de banco não são registrados com detalhes de conexão.
+
+### Configuração e migration nova
+
+Preserve as `DATABASE_URL` e `DIRECT_URL` existentes. O Prisma CLI lê `.env`/variáveis do processo; Next.js também lê `.env.local`. Não copie segredos para o código nem para o chat.
+
+Configure privadamente `AUTH_SECRET` com um valor aleatório de pelo menos 32 caracteres. Para gerá-lo diretamente em um arquivo local ignorado pelo Git, sem mostrar o valor no terminal, execute **somente se essa variável ainda não existir**:
+
+```bash
+node -e "const fs=require('node:fs'),c=require('node:crypto'),p='.env.local';const s=fs.existsSync(p)?fs.readFileSync(p,'utf8'):'';if(/^AUTH_SECRET=/m.test(s))throw Error('AUTH_SECRET já existe; preserve o valor atual');fs.appendFileSync(p,'\nAUTH_SECRET='+c.randomBytes(48).toString('base64url')+'\n')"
+```
+
+Configure `AUTH_URL` com a origem da aplicação (`http://localhost:3000` no desenvolvimento; HTTPS em produção). `AUTH_TRUST_HOST` só deve ser habilitado em infraestrutura confiável. Não use prefixo `NEXT_PUBLIC_` para esses valores.
+
+A migration `20261005140000_customer_auth` adiciona apenas `User.passwordHash` nullable e a tabela `AuthRateLimit`; as migrations já aplicadas permanecem intactas. Para aplicá-la no ambiente autorizado:
+
+```bash
+npm ci
+npm run db:generate
+npm run db:deploy
+npm test
+npm run lint
+npm run build
+```
+
+Não use reset nem edite migrations anteriores. Esta etapa não aplica mudanças no Neon automaticamente, não modifica credenciais e não faz deploy.
+
+### Validação automatizada
+
+`npm test` executa a suíte original de orçamento e a nova suíte de autenticação. PGlite roda PostgreSQL isolado em memória, aplica as migrations em ordem e verifica preservação de usuário existente, persistência, constraints e rate limit concorrente. Os serviços e handlers usam uma fronteira Prisma substituída por consultas ao banco de teste; isso não é uma conexão Prisma/Neon ponta a ponta. Auth.js é executado de verdade para validar CSRF, login, cookies, sessão, roles, expiração, adulteração, usuário removido e logout. A integração de QuoteRequest verifica o vínculo por sessão e o isolamento dos pedidos. Nenhum teste acessa Neon ou usa as credenciais locais.
+
+Validação no ambiente Neon e navegação completa em navegador devem ocorrer após a aplicação autorizada da migration e configuração local da autenticação.
+
+
+## Correções prioritárias e validação contínua
+
+Veja `docs/priority-hardening.md` para alterações, resultados e pendências reais.
+
+```bash
+npm ci
+npm run db:generate
+npm test
+npm run lint
+npm run build
+npm run typecheck
+npm run audit:check
+npx playwright install chromium
+npm run test:e2e
+```
+
+A configuração de Playwright gera um AUTH_SECRET temporário para o servidor local de teste. Não usa o segredo da conta real. Os cenários públicos usam respostas simuladas de orçamento e o cenário comercial real exige um PostgreSQL local dedicado. Nenhuma configuração de teste deve apontar para Neon.
+
+A CI cria PostgreSQL 16 isolado, aplica migrations, usa Prisma real em `npm run test:integration` e executa o fluxo de cadastro/login/orçamento/conta/logout em navegador. O script de integração só aceita banco `peca_lab_test` em localhost com `DB_INTEGRATION_TEST=1`.
+
+`npm run check:deployment` confere a presença das variáveis necessárias e HTTPS sem imprimir valores. Não substitui configuração do proxy, validação do banco, dados empresariais, políticas de privacidade ou aprovação de deploy.
+
+O gate `audit:check` bloqueia novos advisories e falhas da consulta. Há uma exceção temporária, específica e visível para `braces` somente como dependência de desenvolvimento; ela expira em 06/11/2026. O comando `npm audit` original continua reportando esse risco. Não se deve aceitar conteúdo externo como padrão de glob das ferramentas. A lista e justificativa ficam em `docs/audit-exceptions.json`.
