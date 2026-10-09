@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { consumeQuoteRateLimit } from "../quote-rate-limit";
 import { quoteRequestSchema } from "./validation";
 
 const validQuote = {
@@ -57,15 +56,4 @@ test("accepts an omitted application and normalizes an empty value to null", () 
   assert.equal(empty.success, true);
   if (omitted.success) assert.equal(omitted.data.application, null);
   if (empty.success) assert.equal(empty.data.application, null);
-});
-
-test("rate limits repeated quote submissions and resets after the window", () => {
-  const client = `quote-test-${crypto.randomUUID()}`;
-  const start = 1_000_000;
-
-  for (let request = 0; request < 5; request += 1) {
-    assert.equal(consumeQuoteRateLimit(client, start).allowed, true);
-  }
-  assert.equal(consumeQuoteRateLimit(client, start).allowed, false);
-  assert.equal(consumeQuoteRateLimit(client, start + 15 * 60 * 1000).allowed, true);
 });

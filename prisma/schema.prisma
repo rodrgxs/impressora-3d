@@ -183,6 +183,8 @@ model ProductImage {
 }
 
 model QuoteRequest {
+  submissionKey  String? @unique @db.VarChar(64)
+  submissionHash String? @db.VarChar(64)
   id            String      @id @default(cuid())
   userId        String?
   categoryId    String?

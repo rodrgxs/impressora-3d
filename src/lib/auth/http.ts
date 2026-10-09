@@ -1,7 +1,14 @@
+import { isIP } from "node:net";
+
 // Only enable an IP header when the ingress overwrites it and direct origin access is blocked.
 export function clientKey(headers: Headers) {
   const trustedHeader = process.env.AUTH_CLIENT_IP_HEADER;
-  return (trustedHeader ? headers.get(trustedHeader)?.trim().slice(0, 200) : null) || "unknown";
+  const value = trustedHeader ? headers.get(trustedHeader)?.trim() : undefined;
+  // Accept one IP only, never an untrusted forwarding chain or arbitrary bucket key.
+  // Scoped IPv6 (for example fe80::1%eth0) is local to an interface, not a
+  // globally meaningful client identity, and cannot be parsed by URL.
+  if (!value || value.includes("%") || !isIP(value)) return "unknown";
+  return isIP(value) === 6 ? new URL(`http://[${value}]/`).hostname : value;
 }
 
 export function sameOrigin(request: Request) {
@@ -9,11 +16,21 @@ export function sameOrigin(request: Request) {
   return request.headers.get("origin") === expected;
 }
 
-export async function readSmallJson(request: Request, maxBytes = 4096): Promise<unknown> {
-  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+export async function readSmallJson(
+  request: Request,
+  maxBytes = 4096,
+): Promise<unknown> {
+  if (
+    request.headers
+      .get("content-type")
+      ?.split(";", 1)[0]
+      .trim()
+      .toLowerCase() !== "application/json"
+  ) {
     throw new Error("Invalid content type");
   }
-  if (Number(request.headers.get("content-length")) > maxBytes) throw new Error("Body too large");
+  if (Number(request.headers.get("content-length")) > maxBytes)
+    throw new Error("Body too large");
   const reader = request.body?.getReader();
   if (!reader) throw new Error("Missing body");
   const chunks: Uint8Array[] = [];

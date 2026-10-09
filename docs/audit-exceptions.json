@@ -1,0 +1,8 @@
+[
+  {
+    "package": "braces",
+    "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+    "expires": "2026-11-06T00:00:00Z",
+    "reason": "No fixed braces release on 2026-10-06. Used only by development tools with repository-owned glob patterns; no user-controlled pattern input. Reassess upstream fix or toolchain replacement before commercial deployment. Raw npm audit remains visible."
+  }
+]
