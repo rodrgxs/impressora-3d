@@ -160,3 +160,135 @@ test("real signup/login/owned quote/logout on isolated PostgreSQL", async ({
   await page.goto("/conta");
   await expect(page).toHaveURL(/\/login$/);
 });
+
+test("administrator manages a quote while customer cannot access administration", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.DB_INTEGRATION_TEST !== "1",
+    "Requires isolated PostgreSQL",
+  );
+  const url = new URL(
+    process.env.DATABASE_URL || "postgresql://invalid/invalid",
+  );
+  expect(["127.0.0.1", "localhost"]).toContain(url.hostname);
+  expect(url.pathname).toBe("/peca_lab_test");
+  const { PrismaClient } = await import("@prisma/client");
+  const { hashPassword } = await import("../../src/lib/auth/password");
+  const db = new PrismaClient();
+  const password = "E2E admin test password!";
+  const salt = crypto.randomUUID();
+  const admin = await db.user.create({
+    data: {
+      email: `admin-ui-${salt}@example.com`,
+      name: "Admin E2E",
+      role: "ADMIN",
+      passwordHash: await hashPassword(password),
+    },
+  });
+  const customer = await db.user.create({
+    data: {
+      email: `customer-ui-${salt}@example.com`,
+      name: "Customer E2E",
+      role: "CUSTOMER",
+      passwordHash: await hashPassword(password),
+    },
+  });
+  const quote = await db.quoteRequest.create({
+    data: {
+      customerName: "Cliente Teste",
+      customerEmail: customer.email!,
+      userId: customer.id,
+      customerPhone: "11999999999",
+      partName: "Suporte administrativo E2E",
+      description: "Peça de teste isolada",
+    },
+  });
+  const login = async (email: string) => {
+    await page.goto("/login");
+    await page.locator('[name="email"]').fill(email);
+    await page.locator('[name="password"]').fill(password);
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
+    await expect(page).toHaveURL(/\/conta$/);
+  };
+  try {
+    await login(customer.email!);
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/conta$/);
+    const forbidden = await page.request.patch(
+      `/api/admin/quotes/${quote.id}`,
+      {
+        headers: { origin: "http://127.0.0.1:3100" },
+        data: {
+          status: "UNDER_REVIEW",
+          expectedUpdatedAt: quote.updatedAt.toISOString(),
+          note: "Attempt",
+        },
+      },
+    );
+    expect(forbidden.status()).toBe(403);
+    await page.getByRole("button", { name: "Sair da conta" }).click();
+    await login(admin.email!);
+    await page
+      .getByRole("link", { name: "Abrir central de orçamentos" })
+      .click();
+    await page.getByLabel("Buscar solicitação").fill(quote.id);
+    await page.getByRole("button", { name: "Filtrar", exact: true }).click();
+    await page.screenshot({
+      path: "test-results/admin-list-desktop.png",
+      fullPage: true,
+    });
+    await page
+      .getByRole("link")
+      .filter({ hasText: "Suporte administrativo E2E" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Suporte administrativo E2E", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Histórico de atendimento" }),
+    ).toBeVisible();
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    for (const width of [320, 390, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    await page.screenshot({
+      path: "test-results/admin-detail-desktop.png",
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: "test-results/admin-detail-mobile.png",
+      fullPage: true,
+    });
+    await page.getByLabel("Novo andamento").selectOption("UNDER_REVIEW");
+    await page
+      .getByLabel("Observação interna")
+      .fill("Peça recebida para avaliação técnica.");
+    await page.getByRole("button", { name: "Salvar andamento" }).click();
+    await expect(page.locator(".admin-history")).toContainText(
+      "Peça recebida para avaliação técnica.",
+    );
+    expect(
+      (await db.quoteRequest.findUniqueOrThrow({ where: { id: quote.id } }))
+        .status,
+    ).toBe("UNDER_REVIEW");
+    await db.user.update({
+      where: { id: admin.id },
+      data: { role: "CUSTOMER" },
+    });
+    await page.reload();
+    await expect(page).toHaveURL(/\/conta$/);
+  } finally {
+    await db.quoteRequest.delete({ where: { id: quote.id } });
+    await db.user.deleteMany({
+      where: { id: { in: [admin.id, customer.id] } },
+    });
+    await db.$disconnect();
+  }
+});

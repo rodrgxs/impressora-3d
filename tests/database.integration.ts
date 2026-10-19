@@ -86,3 +86,99 @@ test("real Prisma/PostgreSQL: registration, login, shared rate limit, ownership 
     await db.$disconnect();
   }
 });
+
+test("admin updates use fresh roles, atomic audit history and optimistic concurrency", async () => {
+  const { updateQuoteStatus, listAdminQuotes, adminQuote } = await import(
+    "../src/lib/admin/quotes"
+  );
+  const db = new PrismaClient();
+  const admin = await db.user.create({
+    data: {
+      name: "CI Admin",
+      email: `admin-${crypto.randomUUID()}@example.com`,
+      role: "ADMIN",
+    },
+    select: { id: true, name: true, email: true, role: true },
+  });
+  const customer = await db.user.create({
+    data: {
+      name: "CI Customer",
+      email: `customer-${crypto.randomUUID()}@example.com`,
+      role: "CUSTOMER",
+    },
+    select: { id: true, name: true, email: true, role: true },
+  });
+  const quote = await db.quoteRequest.create({
+    data: {
+      userId: customer.id,
+      customerName: "CI Customer",
+      customerEmail: customer.email!,
+      customerPhone: "11999999999",
+      partName: `CI-${crypto.randomUUID()}`,
+      description: "Isolated administration test",
+    },
+  });
+  const change = {
+    status: "UNDER_REVIEW",
+    expectedUpdatedAt: quote.updatedAt.toISOString(),
+    note: "Review started",
+  };
+  try {
+    await assert.rejects(listAdminQuotes(db, customer, {}), { status: 403 });
+    await assert.rejects(adminQuote(db, customer, quote.id), { status: 403 });
+    await assert.rejects(updateQuoteStatus(db, customer, quote.id, change), {
+      status: 403,
+    });
+    await assert.rejects(
+      updateQuoteStatus(db, admin, quote.id, { ...change, status: "ACCEPTED" }),
+      { status: 400 },
+    );
+    const race = await Promise.allSettled([
+      updateQuoteStatus(db, admin, quote.id, change),
+      updateQuoteStatus(db, admin, quote.id, change),
+    ]);
+    assert.equal(race.filter((r) => r.status === "fulfilled").length, 1);
+    assert.equal(
+      (race.find((r) => r.status === "rejected") as PromiseRejectedResult)
+        .reason.status,
+      409,
+    );
+    const detail = await adminQuote(db, admin, quote.id);
+    assert.equal(detail?.status, "UNDER_REVIEW");
+    assert.equal(detail?.statusHistory.length, 1);
+    assert.equal(detail?.statusHistory[0].actor?.name, "CI Admin");
+    assert.equal(
+      (
+        await listAdminQuotes(db, admin, {
+          q: quote.partName,
+          status: "UNDER_REVIEW",
+        })
+      ).total,
+      1,
+    );
+    assert.ok(!("submissionHash" in detail!));
+    assert.equal((await accountQuotes(db, customer))[0].status, "UNDER_REVIEW");
+    await db.user.update({
+      where: { id: admin.id },
+      data: { role: "CUSTOMER" },
+    });
+    await assert.rejects(
+      updateQuoteStatus(db, admin, quote.id, {
+        ...change,
+        status: "CANCELLED",
+        expectedUpdatedAt: detail!.updatedAt.toISOString(),
+      }),
+      { status: 403 },
+    );
+    assert.equal(
+      await db.statusHistory.count({ where: { quoteRequestId: quote.id } }),
+      1,
+    );
+  } finally {
+    await db.quoteRequest.delete({ where: { id: quote.id } });
+    await db.user.deleteMany({
+      where: { id: { in: [admin.id, customer.id] } },
+    });
+    await db.$disconnect();
+  }
+});
